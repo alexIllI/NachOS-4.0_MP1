@@ -62,7 +62,6 @@ void ExceptionHandler(ExceptionType which) {
                     printf("test halt exception handler\n");  // 此行用以測試halt()是否經過exception handler
                     SysHalt();
                     cout << "in exception\n";
-                    cout << "wtf";
                     ASSERTNOTREACHED();
                     break;
                 case SC_PrintInt:
