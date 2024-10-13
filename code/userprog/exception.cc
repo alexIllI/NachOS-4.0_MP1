@@ -59,8 +59,10 @@ void ExceptionHandler(ExceptionType which) {
             switch (type) {
                 case SC_Halt:
                     DEBUG(dbgSys, "Shutdown, initiated by user program.\n");
+                    printf("test halt exception handler\n");  // 此行用以測試halt()是否經過exception handler
                     SysHalt();
                     cout << "in exception\n";
+                    cout << "wtf";
                     ASSERTNOTREACHED();
                     break;
                 case SC_PrintInt:
@@ -90,7 +92,7 @@ void ExceptionHandler(ExceptionType which) {
                     val = kernel->machine->ReadRegister(4);
                     {
                         char *filename = &(kernel->machine->mainMemory[val]);
-                        // cout << filename << endl;
+                        cout << filename << endl;
                         status = SysCreate(filename);
                         kernel->machine->WriteRegister(2, (int)status);
                     }
@@ -129,6 +131,67 @@ void ExceptionHandler(ExceptionType which) {
                     val = kernel->machine->ReadRegister(4);
                     cout << "return value:" << val << endl;
                     kernel->currentThread->Finish();
+                    break;
+                case SC_Open:
+                    val = kernel->machine->ReadRegister(4);  // Get the pointer to the filename in user space
+                    {
+                        char *filename = &(kernel->machine->mainMemory[val]);
+                        cout << filename << endl;
+                        OpenFileId fileId = SysOpen(filename);      // Call the kernel function to open the file
+                        kernel->machine->WriteRegister(2, fileId);  // Return the file ID in register $2
+                    }
+                    kernel->machine->WriteRegister(PrevPCReg, kernel->machine->ReadRegister(PCReg));
+                    kernel->machine->WriteRegister(PCReg, kernel->machine->ReadRegister(PCReg) + 4);
+                    kernel->machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg) + 4);
+                    return;
+                    ASSERTNOTREACHED();
+                    break;
+                case SC_Write:
+                    int bufferAddr = kernel->machine->ReadRegister(4);     // Address of the buffer in user space
+                    int size = kernel->machine->ReadRegister(5);           // Size of the data to write
+                    OpenFileId fileId = kernel->machine->ReadRegister(6);  // OpenFileId
+                    {
+                        char *WriteString = &(kernel->machine->mainMemory[bufferAddr]);
+                        cout << WriteString << endl;
+                        int WrittenCount = SysWrite(WriteString, size, fileId);
+                        // Return the number of bytes written in register $2
+                        kernel->machine->WriteRegister(2, WrittenCount);
+                    }
+                    kernel->machine->WriteRegister(PrevPCReg, kernel->machine->ReadRegister(PCReg));
+                    kernel->machine->WriteRegister(PCReg, kernel->machine->ReadRegister(PCReg) + 4);
+                    kernel->machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg) + 4);
+                    return;
+                    ASSERTNOTREACHED();
+                    break;
+                case SC_Read:
+                    int bufferAddr = kernel->machine->ReadRegister(4);     // Address of the buffer in user space
+                    int size = kernel->machine->ReadRegister(5);           // Size of the data to write
+                    OpenFileId fileId = kernel->machine->ReadRegister(6);  // OpenFileId
+                    {
+                        char *ReadString = &(kernel->machine->mainMemory[bufferAddr]);
+                        cout << ReadString << endl;
+                        int ReadCount = SysRead(ReadString, size, fileId);
+                        // Return the number of bytes written in register $2
+                        kernel->machine->WriteRegister(2, ReadCount);
+                    }
+                    kernel->machine->WriteRegister(PrevPCReg, kernel->machine->ReadRegister(PCReg));
+                    kernel->machine->WriteRegister(PCReg, kernel->machine->ReadRegister(PCReg) + 4);
+                    kernel->machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg) + 4);
+                    return;
+                    ASSERTNOTREACHED();
+                    break;
+                    break;
+                case SC_Close:
+                    OpenFileId id = kernel->machine->ReadRegister(4);
+                    {
+                        int closeSucces = SysClose(id);
+                        kernel->machine->WriteRegister(2, closeSucces);
+                    }
+                    kernel->machine->WriteRegister(PrevPCReg, kernel->machine->ReadRegister(PCReg));
+                    kernel->machine->WriteRegister(PCReg, kernel->machine->ReadRegister(PCReg) + 4);
+                    kernel->machine->WriteRegister(NextPCReg, kernel->machine->ReadRegister(PCReg) + 4);
+                    return;
+                    ASSERTNOTREACHED();
                     break;
                 default:
                     cerr << "Unexpected system call " << type << "\n";

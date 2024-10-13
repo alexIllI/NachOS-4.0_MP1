@@ -46,7 +46,9 @@ typedef int OpenFileId;
 class FileSystem {
    public:
     FileSystem() {
-        for (int i = 0; i < 20; i++) OpenFileTable[i] = NULL;
+        for (int i = 0; i < 20; i++) {
+            OpenFileTable[i] = NULL;
+        }
     }
 
     bool Create(char *name) {
@@ -62,19 +64,68 @@ class FileSystem {
         int fileDescriptor = OpenForReadWrite(name, FALSE);
         if (fileDescriptor == -1)
             return NULL;
-        return new OpenFile(fileDescriptor);
+        return new OpenFile(fileDescriptor, name);
     }
 
     //  The OpenAFile function is used for kernel open system call
-    /*  OpenFileId OpenAFile(char *name) {
+    OpenFileId OpenAFile(char *name) {
+        // Check if the file with same name is already open
+        for (int i = 0; i < 20; i++) {
+            if (OpenFileTable[i] != NULL && strcmp(OpenFileTable[i]->GetFileName(), name))
+                return -1;
         }
-        int WriteFile(char *buffer, int size, OpenFileId id){
+        // Check if there's an available slot in the OpenFileTable
+        for (int i = 0; i < 20; i++) {
+            if (OpenFileTable[i] == NULL) {  // Find an empty slot
+                int fileDescriptor = OpenForReadWrite(name, FALSE);
+                if (fileDescriptor == -1)
+                    return -1;  // Return -1 if the file cannot be opened
+
+                // Create a new OpenFile object and store it in the table
+                OpenFileTable[i] = new OpenFile(fileDescriptor, name);
+
+                return i;  // Return the index in the table as the OpenFileId
+            }
         }
-        int ReadFile(char *buffer, int size, OpenFileId id){
-        }
-        int CloseFile(OpenFileId id){
-        }
-    */
+
+        // If all 20 slots are filled, return -1
+        return -1;
+    }
+
+    int WriteFile(char *buffer, int size, OpenFileId id) {
+        // Check if the OpenFileId is valid
+        if (id < 0 || id >= 20 || OpenFileTable[id] == NULL)
+            return -1;  // Invalid file ID
+
+        // Use the OpenFile's Write method to write data to the file
+        int writtenBytes = OpenFileTable[id]->Write(buffer, size);
+
+        // Return the number of bytes actually written
+        return writtenBytes;
+    }
+
+    int ReadFile(char *buffer, int size, OpenFileId id) {
+        // Check if the OpenFileId is valid
+        if (id < 0 || id >= 20 || OpenFileTable[id] == NULL)
+            return -1;  // Invalid file ID
+
+        // Use the OpenFile's Read method to read data from the file
+        int bytesRead = OpenFileTable[id]->Read(buffer, size);
+
+        // Return the number of bytes actually read
+        return bytesRead;
+    }
+
+    int FileSystem::CloseFile(OpenFileId id) {
+        // Check if the OpenFileId is valid
+        if (id < 0 || id >= 20 || OpenFileTable[id] == NULL)
+            return -1;
+
+        delete OpenFileTable[id];
+        OpenFileTable[id] = NULL;
+
+        return 1;
+    }
 
     bool Remove(char *name) { return Unlink(name) == 0; }
 

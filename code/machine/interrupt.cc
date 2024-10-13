@@ -226,6 +226,7 @@ void Interrupt::Idle() {
 // 	Shut down Nachos cleanly, printing out performance statistics.
 //----------------------------------------------------------------------
 void Interrupt::Halt() {
+    printf("test Halt\n"); //測試
 #ifndef NO_HALT_STAT
     cout << "Machine halting!\n\n";
     cout << "This is halt\n";

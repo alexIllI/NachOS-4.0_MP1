@@ -45,9 +45,9 @@ __start:
 	.globl Halt
 	.ent	Halt
 Halt:
-	addiu $2,$0,SC_Halt
-	syscall
-	j	$31
+	addiu $2,$0,SC_Halt	// Place the system call code for Halt (SC_Halt = 0) into register $2
+	syscall				// Trigger the system call (trap to kernel)
+	j	$31				// Return control to the caller (back to the user program)
 	.end Halt
 
         .globl  PrintInt
@@ -113,6 +113,38 @@ Create:
 	syscall
 	j	$31
 	.end Create
+
+	.globl Open
+	.ent	Open
+Open:
+	addiu $2,$0,SC_Open
+	syscall
+	j	$31
+	.end Open
+
+	.globl Write
+	.ent	Write
+Write:
+	addiu $2,$0,SC_Write
+	syscall
+	j	$31
+	.end Write
+
+	.globl Read
+	.ent	Read
+Read:
+	addiu $2,$0,SC_Read
+	syscall
+	j	$31
+	.end Read
+
+	.globl Close
+	.ent	Close
+Close:
+	addiu $2,$0,SC_Close
+	syscall
+	j	$31
+	.end Close
 
 	.globl Remove
 	.ent	Remove

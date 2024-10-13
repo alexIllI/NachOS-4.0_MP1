@@ -29,10 +29,12 @@
                      // See definitions listed under #else
 class OpenFile {
    public:
-    OpenFile(int f) {
+    OpenFile(int f, const char *fileName) {
         file = f;
         currentOffset = 0;
-    }                             // open the file
+        name = new char[strlen(fileName) + 1];
+        strcpy(name, fileName);  // Copy the file name
+    }  // open the file
     ~OpenFile() { Close(file); }  // close the file
 
     int ReadAt(char *into, int numBytes, int position) {
@@ -60,9 +62,14 @@ class OpenFile {
         return Tell(file);
     }
 
+    const char *GetFileName() const {
+        return name;
+    }
+
    private:
     int file;
     int currentOffset;
+    char *name;
 };
 
 #else  // FILESYS
