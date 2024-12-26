@@ -45,7 +45,8 @@
 //	"initialValue" is the initial value of the semaphore.
 //----------------------------------------------------------------------
 
-Semaphore::Semaphore(char *debugName, int initialValue) {
+Semaphore::Semaphore(char *debugName, int initialValue)
+{
     name = debugName;
     value = initialValue;
     queue = new List<Thread *>;
@@ -57,7 +58,8 @@ Semaphore::Semaphore(char *debugName, int initialValue) {
 //	is still waiting on the semaphore!
 //----------------------------------------------------------------------
 
-Semaphore::~Semaphore() {
+Semaphore::~Semaphore()
+{
     delete queue;
 }
 
@@ -71,7 +73,8 @@ Semaphore::~Semaphore() {
 //	when it is called.
 //----------------------------------------------------------------------
 
-void Semaphore::P() {
+void Semaphore::P()
+{
     DEBUG(dbgTraCode, "In Semaphore::P(), " << kernel->stats->totalTicks);
     Interrupt *interrupt = kernel->interrupt;
     Thread *currentThread = kernel->currentThread;
@@ -79,11 +82,12 @@ void Semaphore::P() {
     // disable interrupts
     IntStatus oldLevel = interrupt->SetLevel(IntOff);
 
-    while (value == 0) {               // semaphore not available
-        queue->Append(currentThread);  // so go to sleep
+    while (value == 0)
+    {                                 // semaphore not available
+        queue->Append(currentThread); // so go to sleep
         currentThread->Sleep(FALSE);
     }
-    value--;  // semaphore available, consume its value
+    value--; // semaphore available, consume its value
 
     // re-enable interrupts
     (void)interrupt->SetLevel(oldLevel);
@@ -97,14 +101,16 @@ void Semaphore::P() {
 //	are disabled when it is called.
 //----------------------------------------------------------------------
 
-void Semaphore::V() {
+void Semaphore::V()
+{
     DEBUG(dbgTraCode, "In Semaphore::V(), " << kernel->stats->totalTicks);
     Interrupt *interrupt = kernel->interrupt;
 
     // disable interrupts
     IntStatus oldLevel = interrupt->SetLevel(IntOff);
 
-    if (!queue->IsEmpty()) {  // make thread ready.
+    if (!queue->IsEmpty())
+    { // make thread ready.
         kernel->scheduler->ReadyToRun(queue->RemoveFront());
     }
     value++;
@@ -121,20 +127,24 @@ void Semaphore::V() {
 
 static Semaphore *ping;
 static void
-SelfTestHelper(Semaphore *pong) {
-    for (int i = 0; i < 10; i++) {
+SelfTestHelper(Semaphore *pong)
+{
+    for (int i = 0; i < 10; i++)
+    {
         ping->P();
         pong->V();
     }
 }
 
-void Semaphore::SelfTest() {
+void Semaphore::SelfTest()
+{
     Thread *helper = new Thread("ping", 1);
 
-    ASSERT(value == 0);  // otherwise test won't work!
+    ASSERT(value == 0); // otherwise test won't work!
     ping = new Semaphore("ping", 0);
     helper->Fork((VoidFunctionPtr)SelfTestHelper, this);
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 10; i++)
+    {
         ping->V();
         this->P();
     }
@@ -149,9 +159,10 @@ void Semaphore::SelfTest() {
 //	"debugName" is an arbitrary name, useful for debugging.
 //----------------------------------------------------------------------
 
-Lock::Lock(char *debugName) {
+Lock::Lock(char *debugName)
+{
     name = debugName;
-    semaphore = new Semaphore("lock", 1);  // initially, unlocked
+    semaphore = new Semaphore("lock", 1); // initially, unlocked
     lockHolder = NULL;
 }
 
@@ -159,7 +170,8 @@ Lock::Lock(char *debugName) {
 // Lock::~Lock
 // 	Deallocate a lock
 //----------------------------------------------------------------------
-Lock::~Lock() {
+Lock::~Lock()
+{
     delete semaphore;
 }
 
@@ -170,7 +182,8 @@ Lock::~Lock() {
 //	equal to busy, and semaphore value of 1 equal to free.
 //----------------------------------------------------------------------
 
-void Lock::Acquire() {
+void Lock::Acquire()
+{
     semaphore->P();
     lockHolder = kernel->currentThread;
 }
@@ -186,8 +199,9 @@ void Lock::Acquire() {
 // 	may release it.
 //---------------------------------------------------------------------
 
-void Lock::Release() {
-    ASSERT(IsHeldByCurrentThread());
+void Lock::Release()
+{
+    ASSERT(lockHolder == kernel->currentThread);
     lockHolder = NULL;
     semaphore->V();
 }
@@ -200,7 +214,8 @@ void Lock::Release() {
 //
 //	"debugName" is an arbitrary name, useful for debugging.
 //----------------------------------------------------------------------
-Condition::Condition(char *debugName) {
+Condition::Condition(char *debugName)
+{
     name = debugName;
     waitQueue = new List<Semaphore *>;
 }
@@ -210,7 +225,8 @@ Condition::Condition(char *debugName) {
 // 	Deallocate the data structures implementing a condition variable.
 //----------------------------------------------------------------------
 
-Condition::~Condition() {
+Condition::~Condition()
+{
     delete waitQueue;
 }
 
@@ -229,7 +245,8 @@ Condition::~Condition() {
 //	"conditionLock" -- lock protecting the use of this condition
 //----------------------------------------------------------------------
 
-void Condition::Wait(Lock *conditionLock) {
+void Condition::Wait(Lock *conditionLock)
+{
     Semaphore *waiter;
 
     ASSERT(conditionLock->IsHeldByCurrentThread());
@@ -257,12 +274,14 @@ void Condition::Wait(Lock *conditionLock) {
 //	"conditionLock" -- lock protecting the use of this condition
 //----------------------------------------------------------------------
 
-void Condition::Signal(Lock *conditionLock) {
+void Condition::Signal(Lock *conditionLock)
+{
     Semaphore *waiter;
 
     ASSERT(conditionLock->IsHeldByCurrentThread());
 
-    if (!waitQueue->IsEmpty()) {
+    if (!waitQueue->IsEmpty())
+    {
         waiter = waitQueue->RemoveFront();
         waiter->V();
     }
@@ -275,8 +294,10 @@ void Condition::Signal(Lock *conditionLock) {
 //	"conditionLock" -- lock protecting the use of this condition
 //----------------------------------------------------------------------
 
-void Condition::Broadcast(Lock *conditionLock) {
-    while (!waitQueue->IsEmpty()) {
+void Condition::Broadcast(Lock *conditionLock)
+{
+    while (!waitQueue->IsEmpty())
+    {
         Signal(conditionLock);
     }
 }
