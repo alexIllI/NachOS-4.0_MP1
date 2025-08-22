@@ -116,7 +116,7 @@ class FileSystem {
         return bytesRead;
     }
 
-    int FileSystem::CloseFile(OpenFileId id) {
+    int CloseFile(OpenFileId id) {
         // Check if the OpenFileId is valid
         if (id < 0 || id >= 20 || OpenFileTable[id] == NULL)
             return -1;
